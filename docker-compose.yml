@@ -10,6 +10,19 @@ services:
       - "6000:5000"
     env_file:
       - ./.env.dev
+      - ./DatabaseAPI/.env.dev
+    depends_on:
+      - db
+  user:
+    build: ./UserAPI/
+    command: python manage.py run -h 0.0.0.0
+    volumes:
+      - ./UserAPI/:/usr/src/user/
+    ports:
+      - "6758:5000"
+    env_file:
+      - ./.env.dev
+      - ./UserAPI/.env.dev
     depends_on:
       - db
   db:
