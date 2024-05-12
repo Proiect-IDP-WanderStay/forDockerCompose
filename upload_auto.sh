@@ -24,6 +24,10 @@ docker image push robertzz/business_logic:latest
 docker image tag idp_project-kong robertzz/kong_dbless:latest
 docker image push robertzz/kong_dbless:latest
 
+# Prometheus
+docker image tag idp_project-prometheus robertzz/idp_project_prometheus:latest
+docker image push robertzz/idp_project_prometheus:latest
+
 # docker swarm init --advertise-addr 192.168.0.26
 
 # http://localhost:5050/browser/
