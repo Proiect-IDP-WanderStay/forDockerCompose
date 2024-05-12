@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  web:
+    build: ./DatabaseAPI/
+    command: python manage.py run -h 0.0.0.0 --port 4000
+    volumes:
+      - ./DatabaseAPI/:/usr/src/app/
+    ports:
+      - "6000:4000"
+    depends_on:
+      - db
+    environment:
+      - FLASK_DEBUG=1
+      - DATABASE_URL=postgresql://hello_flask:hello_flask@db:5432/hello_flask_dev
+      - SQL_HOST=db
+      - SQL_PORT=5432
+      - DATABASE=postgres
+      - FLASK_APP=project/__init__.py
+    networks:
+      - network-database-UserAPI-DatabaseAPI
+      - network-BusinessLogic-DatabaseAPI
+
+  user:
+    build: ./UserAPI/
+    command: python manage.py run -h 0.0.0.0
+    volumes:
+      - ./UserAPI/:/usr/src/user/
+    ports:
+      - "6758:5000"
+    environment:
+      - FLASK_DEBUG=1
+      - DATABASE_URL=postgresql://hello_flask:hello_flask@db:5432/hello_flask_dev
+      - SQL_HOST=db
+      - SQL_PORT=5432
+      - DATABASE=postgres
+      - FLASK_APP=user/__init__.py
+      - SECRET_KEY="small_secret"
+    depends_on:
+      - db
+    networks:
+      - network-database-UserAPI-DatabaseAPI
+      - network-UserLogic-UserAPI
+
+  db:
+    image: postgres:13
+    ports:
+      - "5432:5432"
+    restart: always
+    volumes:
+      - db_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=hello_flask
+      - POSTGRES_PASSWORD=hello_flask
+      - POSTGRES_DB=hello_flask_dev
+    networks:
+      - network-database-admin
+      - network-database-UserAPI-DatabaseAPI
+
+  pg-admin:
+    container_name: pgadmin4_container
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=root
+    ports:
+      - "5050:80"
+    networks:
+      - network-database-admin
+
+volumes:
+  db_data:
+
+networks:
+  network-database-admin:
+  network-database-UserAPI-DatabaseAPI:
+  network-BusinessLogic-DatabaseAPI:
+  network-UserLogic-UserAPI:

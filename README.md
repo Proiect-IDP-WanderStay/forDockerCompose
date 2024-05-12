@@ -20,7 +20,7 @@ idp_project/
 Dupa se dă, în directorul comun unde s-au clonat repository-urile (`idp_project`, în cazul meu):
 
 ```bash
-cp forDockerCompose/* .
+cp forDockerCompose/* forDockerCompose/.env.dev .
 ```
 
 La final trebuie să arate astfel:
