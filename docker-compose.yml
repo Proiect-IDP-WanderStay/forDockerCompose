@@ -3,7 +3,7 @@ version: '3.8'
 services:
   web:
     build: ./DatabaseAPI/
-    command: python manage.py run -h 0.0.0.0
+    command: python manage.py run -h 0.0.0.0 --port 4000
     volumes:
       - ./DatabaseAPI/:/usr/src/app/
     ports:
