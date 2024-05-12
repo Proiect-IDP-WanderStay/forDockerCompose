@@ -4,8 +4,6 @@ services:
   business:
     image: robertzz/business_logic:latest
     command: python manage.py run -h 0.0.0.0 --port 7777
-    ports:
-      - "6777:7777"
     deploy:
       replicas: 2
       placement:
@@ -19,14 +17,11 @@ services:
       - FLASK_APP=project/__init__.py
     networks:
       - network-BusinessLogic-DatabaseAPI
-      - network-database-UserAPI-DatabaseAPI
       - internal
 
   io_api:
     image: robertzz/idp_project_database_api:latest 
     command: python manage.py run -h 0.0.0.0 --port 4000
-    ports:
-      - "6000:4000"
     deploy:
       replicas: 2
       placement:
@@ -48,12 +43,11 @@ services:
       - network-database-UserAPI-DatabaseAPI
       - network-BusinessLogic-DatabaseAPI
       - internal
+      - monitoring
 
   user:
     image: robertzz/idp_project_user_api:latest
     command: python manage.py run -h 0.0.0.0
-    ports:
-      - "6758:5000"
     environment:
       - FLASK_DEBUG=1
       - DATABASE_URL=postgresql://hello_flask:hello_flask@db:5432/hello_flask_dev
@@ -96,9 +90,8 @@ services:
     networks:
       - network-database-admin
       - network-database-UserAPI-DatabaseAPI
-      - internal
 
-  pg-admin:
+  pgadmin:
     image: dpage/pgadmin4
     restart: always
     environment:
@@ -126,7 +119,7 @@ services:
       - "8001:8001"
       - "8444:8444"
     deploy:
-      replicas: 
+      replicas: 1
       placement:
         constraints: [node.role == manager]
     networks:
@@ -162,37 +155,6 @@ services:
       replicas: 1
       placement:
         constraints: [node.role == manager]
-  
-  testapp:
-    image: mobylab/idp-laborator4-testapp
-    logging:
-        driver: loki
-        options:
-            loki-url: http://host.docker.internal:3100/loki/api/v1/push
-            loki-external-labels: job=myjob,owner=radu,environment=development
-    ports:
-        - 8000:8000
-        - 5000:5000
-    networks:
-        - monitoring
-        - logging
-
-
-  # loki
-  # docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
-  loki:
-    image: grafana/loki
-    volumes:
-        - ./loki/loki.yml:/etc/config/loki.yml
-        - ./loki/wal:/wal
-    entrypoint:
-        - /usr/bin/loki
-        - -config.file=/etc/config/loki.yml
-    ports:
-        - 3100:3100
-    networks:
-        - logging
-        - visualizing
 
   grafana:
     image: grafana/grafana
@@ -200,8 +162,6 @@ services:
         - grafana-volume:/var/lib/grafana
     ports:
         - 3000:3000
-    depends_on:
-        - loki
     deploy:
         placement:
             constraints: [node.role == manager]
@@ -209,14 +169,47 @@ services:
         - visualizing
 
   prometheus:
-    image: prom/prometheus
-    volumes:
-        - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    image: robertzz/idp_project_prometheus
     ports:
         - 9090:9090
     networks:
         - visualizing
         - monitoring
+
+  node_exporter:
+    image: prom/node-exporter
+    deploy:
+        mode: global
+    volumes:
+        - /proc:/host/proc:ro
+        - /sys:/host/sys:ro
+        - /:/rootfs:ro
+    command:
+        - '--path.procfs=/host/proc'
+        - '--path.rootfs=/rootfs'
+        - '--path.sysfs=/host/sys'
+        - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+        - 9100:9100
+    networks:
+        - monitoring
+
+  
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor
+    deploy:
+        mode: global
+    volumes:
+        - /:/rootfs:ro
+        - /var/run:/var/run:ro
+        - /sys:/sys:ro
+        - /var/lib/docker/:/var/lib/docker:ro
+        - /dev/disk:/dev/disk/:ro
+    ports:
+        - 8080:8080
+    networks:
+        - monitoring
+
 
 volumes:
   db_data:
