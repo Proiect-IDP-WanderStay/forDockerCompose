@@ -2,33 +2,38 @@ version: '3.8'
 
 services:
   business:
-    image: robertzz/business_logic:latest
+    build: ./BusinessLogic/
     command: python manage.py run -h 0.0.0.0 --port 7777
+    volumes:
+      - ./BusinessLogic/:/usr/src/app/
     ports:
       - "6777:7777"
     deploy:
-      replicas: 2
+      replicas: 1
       placement:
           max_replicas_per_node: 1
       update_config:
           order: start-first
       rollback_config:
           order: stop-first
+    depends_on:
+      - db
     environment:
       - FLASK_DEBUG=1
       - FLASK_APP=project/__init__.py
     networks:
       - network-BusinessLogic-DatabaseAPI
       - network-database-UserAPI-DatabaseAPI
-      - internal
 
   io_api:
-    image: robertzz/idp_project_database_api:latest 
+    build: ./DatabaseAPI/
     command: python manage.py run -h 0.0.0.0 --port 4000
+    volumes:
+      - ./DatabaseAPI/:/usr/src/app/
     ports:
       - "6000:4000"
     deploy:
-      replicas: 2
+      replicas: 1
       placement:
           max_replicas_per_node: 1
       update_config:
@@ -50,8 +55,10 @@ services:
       - internal
 
   user:
-    image: robertzz/idp_project_user_api:latest
+    build: ./UserAPI/
     command: python manage.py run -h 0.0.0.0
+    volumes:
+      - ./UserAPI/:/usr/src/user/
     ports:
       - "6758:5000"
     environment:
@@ -69,7 +76,7 @@ services:
       - network-UserLogic-UserAPI
       - internal
     deploy:
-      replicas: 2
+      replicas: 1
       placement:
           max_replicas_per_node: 1
       update_config:
@@ -126,7 +133,7 @@ services:
       - "8001:8001"
       - "8444:8444"
     deploy:
-      replicas: 
+      replicas: 1
       placement:
         constraints: [node.role == manager]
     networks:
@@ -233,7 +240,7 @@ networks:
   logging:
   visualizing:
   agent_network:
-    driver: overlay
-    attachable: true
+    # driver: overlay
+    # attachable: true
 
 
